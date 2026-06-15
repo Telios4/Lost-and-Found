@@ -6,16 +6,23 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Route;
 
-// ── User Auth (Breeze handles these) ──────────────────────────────
+// ── Landing page ──────────────────────────────────────────────────
+Route::get('/', function () {
+    if (auth()->check()) {
+        return redirect()->route('dashboard');
+    }
+    return redirect()->route('login');
+});
+
+// ── User Auth (Breeze handles login, register, logout) ────────────
 require __DIR__.'/auth.php';
 
-// ── User Dashboard (protected) ────────────────────────────────────
+// ── Authenticated user routes ─────────────────────────────────────
 Route::middleware('auth')->group(function () {
 
-    Route::get('/login', function () {
-        return view('login');
-    })->name('login');
-
+    Route::get('/dashboard', function () {
+        return view('dashboard');
+    })->name('dashboard');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -33,14 +40,13 @@ Route::middleware('auth')->group(function () {
 
 });
 
-// ── Admin Auth ────────────────────────────────────────────────────
+// ── Admin routes ──────────────────────────────────────────────────
 Route::prefix('admin')->group(function () {
 
     Route::get('/login',  [AdminAuthController::class, 'create'])->name('admin.login');
     Route::post('/login', [AdminAuthController::class, 'store'])->name('admin.login.store');
     Route::post('/logout',[AdminAuthController::class, 'destroy'])->name('admin.logout');
 
-    // Protected admin routes
     Route::middleware('admin.auth')->group(function () {
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
     });
