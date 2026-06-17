@@ -4,50 +4,50 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>@yield('title', 'Strathmore Lost & Found')</title>
-    {{-- @vite(['resources/css/app.css', 'resources/js/app.js']) --}}
-    {{-- <link rel="stylesheet" href="{{ asset('css/app.css') }}"> --}}
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
 </head>
-<body class="bg-gray-50 text-gray-900 min-h-screen flex flex-col">
+<body class="su-bg-surface su-text-body">
 
     <!-- Navigation -->
-    <nav class="bg-white border-b border-gray-200 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
+    <nav class="su-nav">
+        <div class="su-container">
+            <div class="su-nav-inner">
 
                 <!-- Logo -->
-                <a href="{{ route('dashboard') }}" class="flex items-center gap-2">
-                    <span class="text-blue-700 font-bold text-xl">SU</span>
-                    <span class="font-semibold text-gray-800 text-sm">Lost &amp; Found</span>
+                <a href="{{ route('dashboard') }}" class="su-logo">
+                    <span class="su-logo-mark"><span class="su-logo-su">SU</span></span>
+                    <span class="su-logo-text">
+                        <span class="su-logo-name">Lost &amp; Found</span>
+                        <span class="su-logo-sub">Strathmore University</span>
+                    </span>
                 </a>
 
                 <!-- Nav Links -->
-                <div class="hidden sm:flex items-center gap-6 text-sm">
+                <div class="su-nav-links">
                     <a href="{{ route('dashboard') }}"
-                       class="text-gray-600 hover:text-blue-700 {{ request()->routeIs('dashboard') ? 'text-blue-700 font-semibold' : '' }}">
+                       class="su-nav-link {{ request()->routeIs('dashboard') ? 'su-nav-link--active' : '' }}">
                         Dashboard
                     </a>
                     <a href="{{ route('reports.lost.create') }}"
-                       class="text-gray-600 hover:text-blue-700 {{ request()->routeIs('reports.lost.create') ? 'text-blue-700 font-semibold' : '' }}">
+                       class="su-nav-link {{ request()->routeIs('reports.lost.create') ? 'su-nav-link--active' : '' }}">
                         Report Lost
                     </a>
                     <a href="{{ route('reports.found.create') }}"
-                       class="text-gray-600 hover:text-blue-700 {{ request()->routeIs('reports.found.create') ? 'text-blue-700 font-semibold' : '' }}">
+                       class="su-nav-link {{ request()->routeIs('reports.found.create') ? 'su-nav-link--active' : '' }}">
                         Report Found
                     </a>
                     <a href="{{ route('reports.my') }}"
-                       class="text-gray-600 hover:text-blue-700 {{ request()->routeIs('reports.my') ? 'text-blue-700 font-semibold' : '' }}">
+                       class="su-nav-link {{ request()->routeIs('reports.my') ? 'su-nav-link--active' : '' }}">
                         My Reports
                     </a>
                 </div>
 
                 <!-- User Menu -->
-                <div class="flex items-center gap-4 text-sm">
-                    <span class="text-gray-500">{{ Auth::user()->name }}</span>
+                <div class="su-nav-user">
+                    <span class="su-nav-username">{{ Auth::user()->name }}</span>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
-                        <button type="submit"
-                                class="bg-blue-700 text-white px-4 py-1.5 rounded hover:bg-blue-800 transition">
+                        <button type="submit" class="su-btn-logout">
                             Logout
                         </button>
                     </form>
@@ -58,27 +58,34 @@
     </nav>
 
     <!-- Flash Messages -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full mt-4">
+    <div class="su-container su-flash-wrap">
         @if(session('success'))
-            <div class="bg-green-100 border border-green-400 text-green-800 px-4 py-3 rounded mb-4">
+            <div class="su-alert su-alert--success">
                 {{ session('success') }}
             </div>
         @endif
         @if(session('error'))
-            <div class="bg-red-100 border border-red-400 text-red-800 px-4 py-3 rounded mb-4">
+            <div class="su-alert su-alert--error">
                 {{ session('error') }}
             </div>
         @endif
     </div>
 
     <!-- Page Content -->
-    <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-8">
+    <main class="su-main su-container">
         @yield('content')
     </main>
 
     <!-- Footer -->
-    <footer class="bg-white border-t border-gray-200 text-center text-xs text-gray-400 py-4">
-        &copy; {{ date('Y') }} Strathmore University Lost &amp; Found System
+    <footer class="su-footer">
+        <div class="su-container su-footer-inner">
+            <div class="su-footer-brand">
+                <span class="su-footer-logo-mark">SU</span>
+                <span class="su-footer-name">Strathmore Lost &amp; Found</span>
+            </div>
+            <p class="su-footer-copy">&copy; {{ date('Y') }} Strathmore University Lost &amp; Found System</p>
+            <p class="su-footer-tagline">Service and Excellence</p>
+        </div>
     </footer>
 
 </body>

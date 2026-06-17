@@ -4,15 +4,15 @@
 
 @section('content')
 
-    <h2 class="text-xl font-bold text-gray-800 mb-1">Create an account</h2>
-    <p class="text-sm text-gray-500 mb-6">Use your Strathmore email to register.</p>
+    <h2 class="su-form-title">Create an account</h2>
+    <p class="su-form-subtitle">Use your Strathmore email to register.</p>
 
     <form method="POST" action="{{ route('register') }}">
         @csrf
 
         <!-- Name -->
-        <div class="mb-4">
-            <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
+        <div class="su-form-group">
+            <label for="name" class="su-form-label">
                 Full Name
             </label>
             <input type="text"
@@ -20,17 +20,15 @@
                    name="name"
                    value="{{ old('name') }}"
                    required autofocus
-                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm
-                          focus:outline-none focus:ring-2 focus:ring-blue-500
-                          @error('name') border-red-500 @enderror"/>
+                   class="su-form-input @error('name') su-form-input--error @enderror"/>
             @error('name')
-                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                <p class="su-form-error">{{ $message }}</p>
             @enderror
         </div>
 
         <!-- Email -->
-        <div class="mb-4">
-            <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
+        <div class="su-form-group">
+            <label for="email" class="su-form-label">
                 Strathmore Email
             </label>
             <input type="email"
@@ -39,58 +37,51 @@
                    value="{{ old('email') }}"
                    placeholder="you@strathmore.edu"
                    required
-                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm
-                          focus:outline-none focus:ring-2 focus:ring-blue-500
-                          @error('email') border-red-500 @enderror"/>
+                   class="su-form-input @error('email') su-form-input--error @enderror"/>
             @error('email')
-                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                <p class="su-form-error">{{ $message }}</p>
             @enderror
         </div>
 
         <!-- Password -->
-        <div class="mb-4">
-            <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
+        <div class="su-form-group">
+            <label for="password" class="su-form-label">
                 Password
             </label>
             <input type="password"
                    id="password"
                    name="password"
                    required
-                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm
-                          focus:outline-none focus:ring-2 focus:ring-blue-500
-                          @error('password') border-red-500 @enderror"/>
-            <p class="text-xs text-gray-400 mt-1">
+                   class="su-form-input @error('password') su-form-input--error @enderror"/>
+            <p class="su-auth-footer" style="text-align:left; margin-top:0.25rem; margin-bottom:0;">
                 Min. 8 characters, one uppercase, one number, one special character.
             </p>
             @error('password')
-                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                <p class="su-form-error">{{ $message }}</p>
             @enderror
         </div>
 
         <!-- Confirm Password -->
-        <div class="mb-6">
-            <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-1">
+        <div class="su-form-group">
+            <label for="password_confirmation" class="su-form-label">
                 Confirm Password
             </label>
             <input type="password"
                    id="password_confirmation"
                    name="password_confirmation"
                    required
-                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm
-                          focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                   class="su-form-input"/>
         </div>
 
-        <button type="submit"
-                class="w-full bg-blue-700 text-white py-2 rounded-lg text-sm font-semibold
-                       hover:bg-blue-800 transition">
+        <button type="submit" class="su-btn-primary su-btn-block">
             Create Account
         </button>
 
     </form>
 
-    <p class="text-center text-sm text-gray-500 mt-6">
+    <p class="su-form-note">
         Already have an account?
-        <a href="{{ route('login') }}" class="text-blue-700 font-medium hover:underline">Sign in</a>
+        <a href="{{ route('login') }}" class="su-link su-link-strong">Sign in</a>
     </p>
 
 @endsection
