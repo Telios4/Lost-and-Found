@@ -40,6 +40,10 @@
                        class="su-nav-link {{ request()->routeIs('reports.my') ? 'su-nav-link--active' : '' }}">
                         My Reports
                     </a>
+                    <a href="{{ route('reports.search') }}"
+                       class="su-nav-link {{ request()->routeIs('reports.search') ? 'su-nav-link--active' : '' }}">
+                        Search &amp; Matches
+                    </a>
                 </div>
 
                 <!-- User Menu -->

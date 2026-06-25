@@ -36,6 +36,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/reports/found',       [ReportController::class, 'storeFound'])->name('reports.found.store');
 
     Route::get('/reports/my-reports',   [ReportController::class, 'myReports'])->name('reports.my');
+    Route::get('/reports/search',       [ReportController::class, 'search'])->name('reports.search');
     Route::get('/reports/{type}/{id}',  [ReportController::class, 'show'])->name('reports.show');
 
 });

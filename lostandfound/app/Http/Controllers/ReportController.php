@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\LostItemReport;
 use App\Models\FoundItemReport;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -130,5 +133,131 @@ class ReportController extends Controller
         }
 
         return view('reports.show', compact('report', 'type'));
+    }
+
+    public function search(Request $request)
+    {
+        $validated = $request->validate([
+            'q'        => ['nullable', 'string', 'max:100'],
+            'type'     => ['nullable', 'in:all,lost,found'],
+            'category' => ['nullable', 'string', 'in:' . implode(',', $this->categories)],
+        ]);
+
+        $term = trim((string) ($validated['q'] ?? ''));
+        $type = $validated['type'] ?? 'all';
+        $category = $validated['category'] ?? null;
+
+        $lostQuery = LostItemReport::query()->where('status', 'active');
+        $foundQuery = FoundItemReport::query()->where('status', 'active');
+
+        $this->applySearchFilters($lostQuery, $term, $category);
+        $this->applySearchFilters($foundQuery, $term, $category);
+
+        $lostResults = $type === 'found'
+            ? collect()
+            : $lostQuery->latest()->take(60)->get();
+
+        $foundResults = $type === 'lost'
+            ? collect()
+            : $foundQuery->latest()->take(60)->get();
+
+        $matches = $this->detectMatches(
+            $lostQuery->latest()->take(30)->get(),
+            $foundQuery->latest()->take(30)->get()
+        );
+
+        return view('reports.search', [
+            'categories' => $this->categories,
+            'term' => $term,
+            'selectedType' => $type,
+            'selectedCategory' => $category,
+            'lostResults' => $lostResults,
+            'foundResults' => $foundResults,
+            'matches' => $matches,
+        ]);
+    }
+
+    private function applySearchFilters(Builder $query, string $term, ?string $category): void
+    {
+        if ($term !== '') {
+            $query->where(function (Builder $innerQuery) use ($term) {
+                $innerQuery->where('item_name', 'like', "%{$term}%")
+                    ->orWhere('description', 'like', "%{$term}%")
+                    ->orWhere('location', 'like', "%{$term}%")
+                    ->orWhere('category', 'like', "%{$term}%");
+            });
+        }
+
+        if ($category) {
+            $query->where('category', $category);
+        }
+    }
+
+    private function detectMatches(Collection $lostReports, Collection $foundReports): Collection
+    {
+        return $lostReports->map(function ($lostReport) use ($foundReports) {
+            $candidates = $foundReports
+                ->map(function ($foundReport) use ($lostReport) {
+                    $score = $this->calculateMatchScore($lostReport, $foundReport);
+
+                    return [
+                        'report' => $foundReport,
+                        'score' => $score,
+                    ];
+                })
+                ->filter(fn (array $candidate) => $candidate['score'] >= 55)
+                ->sortByDesc('score')
+                ->take(3)
+                ->values();
+
+            return [
+                'lost' => $lostReport,
+                'candidates' => $candidates,
+            ];
+        })->filter(fn (array $matchSet) => $matchSet['candidates']->isNotEmpty())
+            ->values();
+    }
+
+    private function calculateMatchScore(LostItemReport $lostReport, FoundItemReport $foundReport): int
+    {
+        $score = 0;
+
+        if (strcasecmp($lostReport->category, $foundReport->category) === 0) {
+            $score += 35;
+        }
+
+        similar_text(
+            Str::lower($lostReport->item_name),
+            Str::lower($foundReport->item_name),
+            $nameSimilarity
+        );
+        $score += (int) round(($nameSimilarity / 100) * 25);
+
+        similar_text(
+            Str::lower(Str::limit($lostReport->description, 180, '')),
+            Str::lower(Str::limit($foundReport->description, 180, '')),
+            $descriptionSimilarity
+        );
+        $score += (int) round(($descriptionSimilarity / 100) * 20);
+
+        $lostLocationTokens = collect(explode(' ', Str::lower($lostReport->location)))
+            ->map(fn (string $token) => preg_replace('/[^a-z0-9]/', '', $token))
+            ->filter(fn (?string $token) => $token && strlen($token) >= 3);
+
+        $foundLocationTokens = collect(explode(' ', Str::lower($foundReport->location)))
+            ->map(fn (string $token) => preg_replace('/[^a-z0-9]/', '', $token))
+            ->filter(fn (?string $token) => $token && strlen($token) >= 3);
+
+        $locationOverlap = $lostLocationTokens->intersect($foundLocationTokens)->count();
+        if ($locationOverlap > 0) {
+            $score += min(15, $locationOverlap * 5);
+        }
+
+        $daysApart = abs((int) Carbon::parse($lostReport->date_lost)->diffInDays(Carbon::parse($foundReport->date_found), false));
+        if ($daysApart <= 30) {
+            $score += max(1, 5 - intdiv($daysApart, 7));
+        }
+
+        return min(100, $score);
     }
 }

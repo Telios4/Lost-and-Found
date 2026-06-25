@@ -4,60 +4,53 @@
 
 @section('content')
 
-    <div class="max-w-2xl mx-auto">
+    <div class="su-form-page su-detail-page">
 
-        <a href="{{ route('reports.my') }}"
-           class="text-sm text-blue-700 hover:underline mb-4 inline-block">← Back to My Reports</a>
+        <a href="{{ route('reports.my') }}" class="su-link su-detail-back">&larr; Back to My Reports</a>
 
-        <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+        <article class="su-form-card su-detail-card">
 
-            <div class="flex items-center justify-between mb-4">
-                <span class="text-xs font-medium px-3 py-1 rounded-full
-                    {{ $type === 'lost' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700' }}">
+            <div class="su-detail-head">
+                <span class="su-badge {{ $type === 'lost' ? 'su-badge--active' : 'su-badge--resolved' }}">
                     {{ ucfirst($type) }} Item
                 </span>
-                <span class="text-xs font-medium px-3 py-1 rounded-full
-                    {{ $report->status === 'active' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600' }}">
+                <span class="su-badge {{ $report->status === 'active' ? 'su-badge--active' : 'su-badge--resolved' }}">
                     {{ ucfirst($report->status) }}
                 </span>
             </div>
 
-            <h1 class="text-xl font-bold text-gray-800 mb-4">{{ $report->item_name }}</h1>
+            <h1 class="su-page-title su-detail-title">{{ $report->item_name }}</h1>
 
             @if($report->photo_url)
                 <img src="{{ Storage::url($report->photo_url) }}"
                      alt="{{ $report->item_name }}"
-                     class="w-full h-52 object-cover rounded-lg mb-4"/>
+                     class="su-detail-image"/>
             @endif
 
-            <dl class="space-y-3 text-sm">
-                <div class="flex gap-2">
-                    <dt class="font-medium text-gray-500 w-28 shrink-0">Category</dt>
-                    <dd class="text-gray-800">{{ $report->category }}</dd>
+            <dl class="su-detail-grid">
+                <div class="su-detail-row">
+                    <dt class="su-detail-label">Category</dt>
+                    <dd class="su-detail-value">{{ $report->category }}</dd>
                 </div>
-                <div class="flex gap-2">
-                    <dt class="font-medium text-gray-500 w-28 shrink-0">Description</dt>
-                    <dd class="text-gray-800">{{ $report->description }}</dd>
+                <div class="su-detail-row">
+                    <dt class="su-detail-label">Description</dt>
+                    <dd class="su-detail-value">{{ $report->description }}</dd>
                 </div>
-                <div class="flex gap-2">
-                    <dt class="font-medium text-gray-500 w-28 shrink-0">Location</dt>
-                    <dd class="text-gray-800">{{ $report->location }}</dd>
+                <div class="su-detail-row">
+                    <dt class="su-detail-label">Location</dt>
+                    <dd class="su-detail-value">{{ $report->location }}</dd>
                 </div>
-                <div class="flex gap-2">
-                    <dt class="font-medium text-gray-500 w-28 shrink-0">
-                        {{ $type === 'lost' ? 'Date Lost' : 'Date Found' }}
-                    </dt>
-                    <dd class="text-gray-800">
-                        {{ $type === 'lost' ? $report->date_lost : $report->date_found }}
-                    </dd>
+                <div class="su-detail-row">
+                    <dt class="su-detail-label">{{ $type === 'lost' ? 'Date Lost' : 'Date Found' }}</dt>
+                    <dd class="su-detail-value">{{ $type === 'lost' ? $report->date_lost : $report->date_found }}</dd>
                 </div>
-                <div class="flex gap-2">
-                    <dt class="font-medium text-gray-500 w-28 shrink-0">Submitted</dt>
-                    <dd class="text-gray-800">{{ $report->created_at->format('d M Y, g:i a') }}</dd>
+                <div class="su-detail-row">
+                    <dt class="su-detail-label">Submitted</dt>
+                    <dd class="su-detail-value">{{ $report->created_at->format('d M Y, g:i a') }}</dd>
                 </div>
             </dl>
 
-        </div>
+        </article>
     </div>
 
 @endsection

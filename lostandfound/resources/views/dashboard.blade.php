@@ -36,6 +36,13 @@
             <p class="su-action-text">View and manage all your submitted reports.</p>
         </a>
 
+        <a href="{{ route('reports.search') }}"
+           class="su-action-card">
+            <div class="su-action-icon">🧭</div>
+            <h2 class="su-action-title">Search &amp; Match</h2>
+            <p class="su-action-text">Search active reports and detect likely lost-to-found matches.</p>
+        </a>
+
     </section>
     
 

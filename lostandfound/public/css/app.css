@@ -672,3 +672,151 @@ body {
     color: #64748b;
     font-size: 0.8125rem;
 }
+
+/* Search and match detection */
+.su-search-panel {
+    margin-bottom: 1.5rem;
+}
+
+.su-search-form {
+    padding: 1rem;
+}
+
+.su-search-form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.75rem;
+}
+
+.su-form-actions--start {
+    justify-content: flex-start;
+}
+
+.su-match-stack {
+    display: grid;
+    gap: 0.875rem;
+}
+
+.su-match-card {
+    background: #ffffff;
+    border: 1px solid #d7dee9;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    box-shadow: 0 3px 12px rgba(0, 53, 128, 0.04);
+}
+
+.su-match-head {
+    margin-bottom: 0.75rem;
+}
+
+.su-match-title {
+    font-size: 0.95rem;
+    color: #003580;
+    font-weight: 700;
+}
+
+.su-match-meta {
+    color: #64748b;
+    font-size: 0.8125rem;
+}
+
+.su-match-list {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.su-match-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    text-decoration: none;
+    border: 1px solid #d7dee9;
+    border-radius: 0.6rem;
+    padding: 0.7rem 0.8rem;
+    background: #f9fbff;
+}
+
+.su-match-item:hover {
+    background: #f2f7ff;
+}
+
+.su-confidence-badge {
+    flex-shrink: 0;
+    border-radius: 999px;
+    background-color: #e7f0ff;
+    color: #003580;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.2rem 0.55rem;
+}
+
+/* Report details page */
+.su-detail-page {
+    max-width: 48rem;
+}
+
+.su-detail-back {
+    display: inline-block;
+    margin-bottom: 0.75rem;
+}
+
+.su-detail-card {
+    padding: 1.3rem;
+}
+
+.su-detail-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.su-detail-title {
+    margin-bottom: 0.75rem;
+    font-size: 1.35rem;
+}
+
+.su-detail-image {
+    width: 100%;
+    height: 14rem;
+    object-fit: cover;
+    border-radius: 0.6rem;
+    margin-bottom: 0.9rem;
+}
+
+.su-detail-grid {
+    display: grid;
+    gap: 0.55rem;
+}
+
+.su-detail-row {
+    display: grid;
+    grid-template-columns: 7rem 1fr;
+    gap: 0.5rem;
+    align-items: start;
+}
+
+.su-detail-label {
+    color: #64748b;
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+.su-detail-value {
+    color: #0f172a;
+    font-size: 0.875rem;
+}
+
+@media (max-width: 640px) {
+    .su-detail-row {
+        grid-template-columns: 1fr;
+        gap: 0.2rem;
+    }
+
+    .su-detail-head {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
