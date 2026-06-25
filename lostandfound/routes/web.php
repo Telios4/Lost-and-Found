@@ -40,6 +40,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/reports/my-reports',   [ReportController::class, 'myReports'])->name('reports.my');
     Route::get('/reports/search',       [ReportController::class, 'search'])->name('reports.search');
+    Route::post('/reports/{type}/{id}/resolve', [ReportController::class, 'resolve'])->name('reports.resolve');
+    Route::delete('/reports/{type}/{id}', [ReportController::class, 'destroy'])->name('reports.destroy');
     Route::get('/reports/{type}/{id}',  [ReportController::class, 'show'])->name('reports.show');
 
     // ── Notifications ─────────────────────────────────────────────
@@ -67,6 +69,10 @@ Route::prefix('admin')->group(function () {
         Route::post('/reports/lost', [AdminDashboardController::class, 'storeLost'])->name('admin.reports.lost.store');
         Route::get('/reports/found/create', [AdminDashboardController::class, 'createFound'])->name('admin.reports.found.create');
         Route::post('/reports/found', [AdminDashboardController::class, 'storeFound'])->name('admin.reports.found.store');
+        Route::get('/reports', [AdminDashboardController::class, 'reportsIndex'])->name('admin.reports.index');
+        Route::get('/reports/{type}/{id}', [AdminDashboardController::class, 'showReport'])->name('admin.reports.show');
+        Route::post('/reports/{type}/{id}/resolve', [AdminDashboardController::class, 'resolveReport'])->name('admin.reports.resolve');
+        Route::delete('/reports/{type}/{id}', [AdminDashboardController::class, 'destroyReport'])->name('admin.reports.destroy');
     });
 
 });

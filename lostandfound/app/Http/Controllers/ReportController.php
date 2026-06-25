@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CaseResolution;
 use App\Models\LostItemReport;
 use App\Models\FoundItemReport;
 use App\Notifications\PotentialMatchFound;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -127,11 +130,7 @@ class ReportController extends Controller
     // Show single report
     public function show(string $type, string $id)
     {
-        if ($type === 'lost') {
-            $report = LostItemReport::with('user')->where('id', $id)->firstOrFail();
-        } else {
-            $report = FoundItemReport::with('user')->where('id', $id)->firstOrFail();
-        }
+        $report = $this->findReportByType($type, $id);
 
         $isOwner = $report->user_id === Auth::id();
         if (! $isOwner && $report->status !== 'active') {
@@ -144,6 +143,68 @@ class ReportController extends Controller
             : $this->getLostCandidatesForFound($report);
 
         return view('reports.show', compact('report', 'type', 'isOwner', 'counterpartType', 'counterpartCandidates'));
+    }
+
+    public function resolve(Request $request, string $type, string $id): RedirectResponse
+    {
+        $report = $this->findReportByType($type, $id);
+
+        if ($report->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'counterpart_report_id' => ['nullable', 'uuid'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $counterpartReport = null;
+        if (! empty($validated['counterpart_report_id'])) {
+            $counterpartReport = $type === 'lost'
+                ? FoundItemReport::query()->where('id', $validated['counterpart_report_id'])->firstOrFail()
+                : LostItemReport::query()->where('id', $validated['counterpart_report_id'])->firstOrFail();
+        }
+
+        DB::transaction(function () use ($report, $counterpartReport, $type, $validated) {
+            $report->status = 'resolved';
+            $report->save();
+
+            if ($counterpartReport && $counterpartReport->status !== 'resolved') {
+                $counterpartReport->status = 'resolved';
+                $counterpartReport->save();
+            }
+
+            if ($counterpartReport) {
+                CaseResolution::create([
+                    'lost_report_id' => $type === 'lost' ? $report->id : $counterpartReport->id,
+                    'found_report_id' => $type === 'found' ? $report->id : $counterpartReport->id,
+                    'resolved_by_user' => Auth::id(),
+                    'notes' => $validated['notes'] ?? null,
+                    'resolved_at' => now(),
+                ]);
+            }
+        });
+
+        return redirect()->route('reports.show', ['type' => $type, 'id' => $id])
+            ->with('success', 'Report marked as resolved successfully.');
+    }
+
+    public function destroy(string $type, string $id): RedirectResponse
+    {
+        $report = $this->findReportByType($type, $id);
+
+        if ($report->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        if ($report->photo_url) {
+            Storage::disk('public')->delete($report->photo_url);
+        }
+
+        $report->delete();
+
+        return redirect()->route('reports.my')
+            ->with('success', 'Submission removed successfully.');
     }
 
     public function search(Request $request)
@@ -384,5 +445,16 @@ class ReportController extends Controller
         }
 
         return min(100, $score);
+    }
+
+    private function findReportByType(string $type, string $id): LostItemReport|FoundItemReport
+    {
+        if (! in_array($type, ['lost', 'found'], true)) {
+            abort(404);
+        }
+
+        return $type === 'lost'
+            ? LostItemReport::with('user')->where('id', $id)->firstOrFail()
+            : FoundItemReport::with('user')->where('id', $id)->firstOrFail();
     }
 }

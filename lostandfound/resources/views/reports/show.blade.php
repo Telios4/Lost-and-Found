@@ -61,6 +61,43 @@
                 </div>
             @endif
 
+            @if($isOwner)
+                <div class="su-form-actions su-form-actions--start">
+                    @if($report->status === 'active')
+                        <form method="POST" action="{{ route('reports.resolve', ['type' => $type, 'id' => $report->id]) }}" class="su-inline-actions su-inline-actions--stack">
+                            @csrf
+
+                            @if($counterpartCandidates->isNotEmpty())
+                                <div class="su-field">
+                                    <label for="counterpart_report_id" class="su-form-label">Matched {{ ucfirst($counterpartType) }} report (optional)</label>
+                                    <select name="counterpart_report_id" id="counterpart_report_id" class="su-form-input">
+                                        <option value="">Resolve this item only</option>
+                                        @foreach($counterpartCandidates as $candidate)
+                                            <option value="{{ $candidate['report']->id }}">
+                                                {{ $candidate['report']->item_name }} ({{ $candidate['score'] }}% match)
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            @endif
+
+                            <div class="su-field">
+                                <label for="notes" class="su-form-label">Resolution notes (optional)</label>
+                                <textarea name="notes" id="notes" class="su-form-input" rows="3" placeholder="Add closure details"></textarea>
+                            </div>
+
+                            <button type="submit" class="su-btn-primary">Mark as Resolved</button>
+                        </form>
+                    @endif
+
+                    <form method="POST" action="{{ route('reports.destroy', ['type' => $type, 'id' => $report->id]) }}" onsubmit="return confirm('Remove this submission? This action cannot be undone.');">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="su-btn-danger">Remove Submission</button>
+                    </form>
+                </div>
+            @endif
+
         </article>
 
         <section class="su-report-section">

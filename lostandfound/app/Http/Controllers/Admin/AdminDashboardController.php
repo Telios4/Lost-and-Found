@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\CaseResolution;
 use App\Models\FoundItemReport;
 use App\Models\LostItemReport;
 use App\Models\User;
@@ -11,7 +12,9 @@ use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -35,15 +38,43 @@ class AdminDashboardController extends Controller
         $totalFound    = FoundItemReport::count();
         $activeLost    = LostItemReport::where('status', 'active')->count();
         $activeFound   = FoundItemReport::where('status', 'active')->count();
-        $resolvedCount = LostItemReport::where('status', 'resolved')->count();
+        $resolvedCount = LostItemReport::where('status', 'resolved')->count()
+            + FoundItemReport::where('status', 'resolved')->count();
+        $recentLostReports = LostItemReport::query()
+            ->with('user:id,name')
+            ->latest()
+            ->take(8)
+            ->get();
+        $recentFoundReports = FoundItemReport::query()
+            ->with('user:id,name')
+            ->latest()
+            ->take(8)
+            ->get();
 
         return view('admin.dashboard', compact(
             'totalLost',
             'totalFound',
             'activeLost',
             'activeFound',
-            'resolvedCount'
+            'resolvedCount',
+            'recentLostReports',
+            'recentFoundReports'
         ));
+    }
+
+    public function reportsIndex(): View
+    {
+        $lostReports = LostItemReport::query()
+            ->with('user:id,name')
+            ->latest()
+            ->paginate(15, ['*'], 'lost_page');
+
+        $foundReports = FoundItemReport::query()
+            ->with('user:id,name')
+            ->latest()
+            ->paginate(15, ['*'], 'found_page');
+
+        return view('admin.reports.index', compact('lostReports', 'foundReports'));
     }
 
     public function createLost(): View
@@ -132,6 +163,71 @@ class AdminDashboardController extends Controller
 
         return redirect()->route('admin.dashboard')
             ->with('success', 'Found item report posted by admin.');
+    }
+
+    public function showReport(string $type, string $id): View
+    {
+        $report = $this->findReportByType($type, $id);
+        $counterpartType = $type === 'lost' ? 'found' : 'lost';
+        $counterpartCandidates = $type === 'lost'
+            ? $this->getFoundCandidatesForLost($report)
+            : $this->getLostCandidatesForFound($report);
+
+        return view('admin.reports.show', compact('report', 'type', 'counterpartType', 'counterpartCandidates'));
+    }
+
+    public function resolveReport(Request $request, string $type, string $id): RedirectResponse
+    {
+        $report = $this->findReportByType($type, $id);
+
+        $validated = $request->validate([
+            'counterpart_report_id' => ['nullable', 'uuid'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $counterpartReport = null;
+        if (! empty($validated['counterpart_report_id'])) {
+            $counterpartReport = $type === 'lost'
+                ? FoundItemReport::query()->where('id', $validated['counterpart_report_id'])->firstOrFail()
+                : LostItemReport::query()->where('id', $validated['counterpart_report_id'])->firstOrFail();
+        }
+
+        DB::transaction(function () use ($report, $counterpartReport, $type, $validated) {
+            $report->status = 'resolved';
+            $report->save();
+
+            if ($counterpartReport && $counterpartReport->status !== 'resolved') {
+                $counterpartReport->status = 'resolved';
+                $counterpartReport->save();
+            }
+
+            if ($counterpartReport) {
+                CaseResolution::create([
+                    'lost_report_id' => $type === 'lost' ? $report->id : $counterpartReport->id,
+                    'found_report_id' => $type === 'found' ? $report->id : $counterpartReport->id,
+                    'resolved_by_admin' => Session::get('admin_id'),
+                    'notes' => $validated['notes'] ?? null,
+                    'resolved_at' => now(),
+                ]);
+            }
+        });
+
+        return redirect()->route('admin.reports.show', ['type' => $type, 'id' => $id])
+            ->with('success', 'Report marked as resolved.');
+    }
+
+    public function destroyReport(string $type, string $id): RedirectResponse
+    {
+        $report = $this->findReportByType($type, $id);
+
+        if ($report->photo_url) {
+            Storage::disk('public')->delete($report->photo_url);
+        }
+
+        $report->delete();
+
+        return redirect()->route('admin.reports.index')
+            ->with('success', 'Submission removed successfully.');
     }
 
     private function getOrCreateAdminSystemUser(): User
@@ -301,5 +397,16 @@ class AdminDashboardController extends Controller
         }
 
         return min(100, $score);
+    }
+
+    private function findReportByType(string $type, string $id): LostItemReport|FoundItemReport
+    {
+        if (! in_array($type, ['lost', 'found'], true)) {
+            abort(404);
+        }
+
+        return $type === 'lost'
+            ? LostItemReport::with('user')->where('id', $id)->firstOrFail()
+            : FoundItemReport::with('user')->where('id', $id)->firstOrFail();
     }
 }

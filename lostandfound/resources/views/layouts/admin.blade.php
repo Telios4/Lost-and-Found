@@ -24,6 +24,10 @@
                        class="su-nav-link {{ request()->routeIs('admin.dashboard') ? 'su-nav-link--active' : '' }}">
                         Dashboard
                     </a>
+                    <a href="{{ route('admin.reports.index') }}"
+                       class="su-nav-link {{ request()->routeIs('admin.reports.index') || request()->routeIs('admin.reports.show') ? 'su-nav-link--active' : '' }}">
+                        Manage Reports
+                    </a>
                     <a href="{{ route('admin.reports.lost.create') }}"
                        class="su-nav-link {{ request()->routeIs('admin.reports.lost.*') ? 'su-nav-link--active' : '' }}">
                         Post Lost
