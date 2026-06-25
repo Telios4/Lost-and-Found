@@ -50,7 +50,41 @@
                 </div>
             </dl>
 
+            @if(! $isOwner && $report->user)
+                <div class="su-form-actions su-form-actions--start">
+                    <a
+                        href="{{ route('messages.show', ['user' => $report->user->id, 'context_type' => $type, 'context_id' => $report->id]) }}"
+                        class="su-btn-primary"
+                    >
+                        Message Reporter
+                    </a>
+                </div>
+            @endif
+
         </article>
+
+        <section class="su-report-section">
+            <h2 class="su-section-title">Potential {{ ucfirst($counterpartType) }} Matches</h2>
+
+            @if($counterpartCandidates->isEmpty())
+                <p class="su-empty-card">No strong match candidates for this report right now.</p>
+            @else
+                <div class="su-match-list">
+                    @foreach($counterpartCandidates as $candidate)
+                        <a
+                            href="{{ route('reports.show', ['type' => $counterpartType, 'id' => $candidate['report']->id]) }}"
+                            class="su-match-item"
+                        >
+                            <div>
+                                <p class="su-report-name">{{ $candidate['report']->item_name }}</p>
+                                <p class="su-report-detail">{{ $candidate['report']->location }}</p>
+                            </div>
+                            <span class="su-confidence-badge">{{ $candidate['score'] }}% match</span>
+                        </a>
+                    @endforeach
+                </div>
+            @endif
+        </section>
     </div>
 
 @endsection

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
@@ -37,5 +38,25 @@ class User extends Authenticatable
                 $model->id = (string) Str::uuid();
             }
         });
+    }
+
+    public function lostReports(): HasMany
+    {
+        return $this->hasMany(LostItemReport::class);
+    }
+
+    public function foundReports(): HasMany
+    {
+        return $this->hasMany(FoundItemReport::class);
+    }
+
+    public function sentMessages(): HasMany
+    {
+        return $this->hasMany(Message::class, 'sender_id');
+    }
+
+    public function receivedMessages(): HasMany
+    {
+        return $this->hasMany(Message::class, 'receiver_id');
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\LostItemReport;
 use App\Models\FoundItemReport;
+use App\Notifications\PotentialMatchFound;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -50,7 +51,7 @@ class ReportController extends Controller
             $photoUrl = $request->file('photo')->store('report-photos', 'public');
         }
 
-        LostItemReport::create([
+        $report = LostItemReport::create([
             'id'          => (string) Str::uuid(),
             'user_id'     => Auth::id(),
             'item_name'   => $validated['item_name'],
@@ -62,8 +63,10 @@ class ReportController extends Controller
             'status'      => 'active',
         ]);
 
+        $this->notifyPotentialMatchesForLost($report);
+
         return redirect()->route('reports.my')
-                         ->with('success', 'Lost item report submitted successfully.');
+                         ->with('success', 'Lost item report submitted successfully. Notifications were sent for potential matches.');
     }
 
     // Show found item report form
@@ -90,7 +93,7 @@ class ReportController extends Controller
             $photoUrl = $request->file('photo')->store('report-photos', 'public');
         }
 
-        FoundItemReport::create([
+        $report = FoundItemReport::create([
             'id'          => (string) Str::uuid(),
             'user_id'     => Auth::id(),
             'item_name'   => $validated['item_name'],
@@ -102,8 +105,10 @@ class ReportController extends Controller
             'status'      => 'active',
         ]);
 
+        $this->notifyPotentialMatchesForFound($report);
+
         return redirect()->route('reports.my')
-                         ->with('success', 'Found item report submitted successfully.');
+                         ->with('success', 'Found item report submitted successfully. Notifications were sent for potential matches.');
     }
 
     // List user's own reports
@@ -123,16 +128,22 @@ class ReportController extends Controller
     public function show(string $type, string $id)
     {
         if ($type === 'lost') {
-            $report = LostItemReport::where('id', $id)
-                                     ->where('user_id', Auth::id())
-                                     ->firstOrFail();
+            $report = LostItemReport::with('user')->where('id', $id)->firstOrFail();
         } else {
-            $report = FoundItemReport::where('id', $id)
-                                      ->where('user_id', Auth::id())
-                                      ->firstOrFail();
+            $report = FoundItemReport::with('user')->where('id', $id)->firstOrFail();
         }
 
-        return view('reports.show', compact('report', 'type'));
+        $isOwner = $report->user_id === Auth::id();
+        if (! $isOwner && $report->status !== 'active') {
+            abort(403);
+        }
+
+        $counterpartType = $type === 'lost' ? 'found' : 'lost';
+        $counterpartCandidates = $type === 'lost'
+            ? $this->getFoundCandidatesForLost($report)
+            : $this->getLostCandidatesForFound($report);
+
+        return view('reports.show', compact('report', 'type', 'isOwner', 'counterpartType', 'counterpartCandidates'));
     }
 
     public function search(Request $request)
@@ -216,6 +227,120 @@ class ReportController extends Controller
             ];
         })->filter(fn (array $matchSet) => $matchSet['candidates']->isNotEmpty())
             ->values();
+    }
+
+    private function getFoundCandidatesForLost(LostItemReport $lostReport): Collection
+    {
+        return FoundItemReport::query()
+            ->where('status', 'active')
+            ->where('id', '!=', $lostReport->id)
+            ->latest()
+            ->take(40)
+            ->get()
+            ->map(function (FoundItemReport $foundReport) use ($lostReport) {
+                return [
+                    'report' => $foundReport,
+                    'score' => $this->calculateMatchScore($lostReport, $foundReport),
+                ];
+            })
+            ->filter(fn (array $candidate) => $candidate['score'] >= 55)
+            ->sortByDesc('score')
+            ->take(4)
+            ->values();
+    }
+
+    private function getLostCandidatesForFound(FoundItemReport $foundReport): Collection
+    {
+        return LostItemReport::query()
+            ->where('status', 'active')
+            ->where('id', '!=', $foundReport->id)
+            ->latest()
+            ->take(40)
+            ->get()
+            ->map(function (LostItemReport $lostReport) use ($foundReport) {
+                return [
+                    'report' => $lostReport,
+                    'score' => $this->calculateMatchScore($lostReport, $foundReport),
+                ];
+            })
+            ->filter(fn (array $candidate) => $candidate['score'] >= 55)
+            ->sortByDesc('score')
+            ->take(4)
+            ->values();
+    }
+
+    private function notifyPotentialMatchesForLost(LostItemReport $lostReport): void
+    {
+        $lostOwner = $lostReport->user;
+        if (! $lostOwner) {
+            return;
+        }
+
+        $this->getFoundCandidatesForLost($lostReport)
+            ->each(function (array $candidate) use ($lostReport, $lostOwner) {
+                /** @var FoundItemReport $foundReport */
+                $foundReport = $candidate['report'];
+                $score = $candidate['score'];
+
+                $lostOwner->notify(new PotentialMatchFound(
+                    'lost',
+                    $lostReport->id,
+                    $lostReport->item_name,
+                    'found',
+                    $foundReport->id,
+                    $foundReport->item_name,
+                    $score
+                ));
+
+                if ($foundReport->user && $foundReport->user_id !== $lostOwner->id) {
+                    $foundReport->user->notify(new PotentialMatchFound(
+                        'found',
+                        $foundReport->id,
+                        $foundReport->item_name,
+                        'lost',
+                        $lostReport->id,
+                        $lostReport->item_name,
+                        $score
+                    ));
+                }
+            });
+    }
+
+    private function notifyPotentialMatchesForFound(FoundItemReport $foundReport): void
+    {
+        $foundOwner = $foundReport->user;
+        if (! $foundOwner) {
+            return;
+        }
+
+        $this->getLostCandidatesForFound($foundReport)
+            ->each(function (array $candidate) use ($foundReport, $foundOwner) {
+                /** @var LostItemReport $lostReport */
+                $lostReport = $candidate['report'];
+                $score = $candidate['score'];
+
+                $foundOwner->notify(new PotentialMatchFound(
+                    'found',
+                    $foundReport->id,
+                    $foundReport->item_name,
+                    'lost',
+                    $lostReport->id,
+                    $lostReport->item_name,
+                    $score
+                ));
+
+                if ($lostReport->user && $lostReport->user_id !== $foundOwner->id) {
+                    $lostReport->user->notify(new PotentialMatchFound(
+                        'lost',
+                        $lostReport->id,
+                        $lostReport->item_name,
+                        'found',
+                        $foundReport->id,
+                        $foundReport->item_name,
+                        $score
+                    ));
+                }
+            });
     }
 
     private function calculateMatchScore(LostItemReport $lostReport, FoundItemReport $foundReport): int

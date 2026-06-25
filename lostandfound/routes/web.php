@@ -2,13 +2,16 @@
 
 use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\MessageController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 // ── Landing page ──────────────────────────────────────────────────
 Route::get('/', function () {
-    if (auth()->check()) {
+    if (Auth::check()) {
         return redirect()->route('dashboard');
     }
     return redirect()->route('login');
@@ -39,6 +42,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/reports/search',       [ReportController::class, 'search'])->name('reports.search');
     Route::get('/reports/{type}/{id}',  [ReportController::class, 'show'])->name('reports.show');
 
+    // ── Notifications ─────────────────────────────────────────────
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.readAll');
+
+    // ── In-platform messaging ────────────────────────────────────
+    Route::get('/messages', [MessageController::class, 'index'])->name('messages.index');
+    Route::get('/messages/{user}', [MessageController::class, 'show'])->name('messages.show');
+    Route::post('/messages/{user}', [MessageController::class, 'store'])->name('messages.store');
+
 });
 
 // ── Admin routes ──────────────────────────────────────────────────
@@ -50,6 +63,10 @@ Route::prefix('admin')->group(function () {
 
     Route::middleware('admin.auth')->group(function () {
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
+        Route::get('/reports/lost/create', [AdminDashboardController::class, 'createLost'])->name('admin.reports.lost.create');
+        Route::post('/reports/lost', [AdminDashboardController::class, 'storeLost'])->name('admin.reports.lost.store');
+        Route::get('/reports/found/create', [AdminDashboardController::class, 'createFound'])->name('admin.reports.found.create');
+        Route::post('/reports/found', [AdminDashboardController::class, 'storeFound'])->name('admin.reports.found.store');
     });
 
 });

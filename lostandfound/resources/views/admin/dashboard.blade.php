@@ -34,4 +34,20 @@
             <p class="su-stat-value">{{ $resolvedCount }}</p>
         </article>
     </section>
+
+    <section class="su-report-section">
+        <h2 class="su-section-title">Admin Actions</h2>
+
+        <div class="su-action-grid">
+            <a href="{{ route('admin.reports.lost.create') }}" class="su-action-card">
+                <h3 class="su-action-title">Post Lost Item</h3>
+                <p class="su-action-text">Create a lost-item listing from the admin module.</p>
+            </a>
+
+            <a href="{{ route('admin.reports.found.create') }}" class="su-action-card">
+                <h3 class="su-action-title">Post Found Item</h3>
+                <p class="su-action-text">Create a found-item listing from the admin module.</p>
+            </a>
+        </div>
+    </section>
 @endsection

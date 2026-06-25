@@ -44,6 +44,20 @@
                        class="su-nav-link {{ request()->routeIs('reports.search') ? 'su-nav-link--active' : '' }}">
                         Search &amp; Matches
                     </a>
+                    <a href="{{ route('notifications.index') }}"
+                       class="su-nav-link {{ request()->routeIs('notifications.*') ? 'su-nav-link--active' : '' }}">
+                        Notifications
+                        @if(($notificationCount ?? 0) > 0)
+                            <span class="su-nav-pill">{{ $notificationCount }}</span>
+                        @endif
+                    </a>
+                    <a href="{{ route('messages.index') }}"
+                       class="su-nav-link {{ request()->routeIs('messages.*') ? 'su-nav-link--active' : '' }}">
+                        Messages
+                        @if(($messageCount ?? 0) > 0)
+                            <span class="su-nav-pill">{{ $messageCount }}</span>
+                        @endif
+                    </a>
                 </div>
 
                 <!-- User Menu -->
