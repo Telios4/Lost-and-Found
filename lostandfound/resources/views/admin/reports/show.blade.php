@@ -18,8 +18,14 @@
 
             <h1 class="su-page-title su-detail-title">{{ $report->item_name }}</h1>
 
-            @if($report->photo_url)
-                <img src="{{ Storage::url($report->photo_url) }}" alt="{{ $report->item_name }}" class="su-detail-image" />
+            @php
+                $photoPath = $report->photo_url
+                    ? asset('storage/' . ltrim($report->photo_url, '/'))
+                    : null;
+            @endphp
+
+            @if($photoPath)
+                <img src="{{ $photoPath }}" alt="{{ $report->item_name }}" class="su-detail-image" loading="lazy" />
             @endif
 
             <dl class="su-detail-grid">

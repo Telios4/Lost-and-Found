@@ -26,6 +26,9 @@
                 @foreach($lostReports as $report)
                     <a href="{{ route('reports.show', ['type' => 'lost', 'id' => $report->id]) }}"
                        class="su-report-card">
+                        @if($report->photo_url)
+                            <img src="{{ asset('storage/' . ltrim($report->photo_url, '/')) }}" alt="{{ $report->item_name }}" class="su-report-thumb su-report-thumb--card" loading="lazy" />
+                        @endif
                         <div class="su-report-meta">
                             <span class="su-badge {{ $report->status === 'active' ? 'su-badge--active' : 'su-badge--resolved' }}">
                                 {{ ucfirst($report->status) }}
@@ -57,6 +60,9 @@
                 @foreach($foundReports as $report)
                     <a href="{{ route('reports.show', ['type' => 'found', 'id' => $report->id]) }}"
                        class="su-report-card">
+                        @if($report->photo_url)
+                            <img src="{{ asset('storage/' . ltrim($report->photo_url, '/')) }}" alt="{{ $report->item_name }}" class="su-report-thumb su-report-thumb--card" loading="lazy" />
+                        @endif
                         <div class="su-report-meta">
                             <span class="su-badge {{ $report->status === 'active' ? 'su-badge--active' : 'su-badge--resolved' }}">
                                 {{ ucfirst($report->status) }}

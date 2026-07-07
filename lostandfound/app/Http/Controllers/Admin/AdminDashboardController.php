@@ -51,6 +51,48 @@ class AdminDashboardController extends Controller
             ->take(8)
             ->get();
 
+        $sinceDate = Carbon::today()->subDays(6);
+
+        $lostByDay = LostItemReport::query()
+            ->selectRaw('DATE(created_at) as activity_date, COUNT(*) as total')
+            ->whereDate('created_at', '>=', $sinceDate)
+            ->groupBy('activity_date')
+            ->pluck('total', 'activity_date');
+
+        $foundByDay = FoundItemReport::query()
+            ->selectRaw('DATE(created_at) as activity_date, COUNT(*) as total')
+            ->whereDate('created_at', '>=', $sinceDate)
+            ->groupBy('activity_date')
+            ->pluck('total', 'activity_date');
+
+        $resolvedByDay = CaseResolution::query()
+            ->selectRaw('DATE(resolved_at) as activity_date, COUNT(*) as total')
+            ->whereNotNull('resolved_at')
+            ->whereDate('resolved_at', '>=', $sinceDate)
+            ->groupBy('activity_date')
+            ->pluck('total', 'activity_date');
+
+        $activitySeries = collect(range(6, 0))
+            ->map(function (int $dayOffset) use ($lostByDay, $foundByDay, $resolvedByDay) {
+                $date = Carbon::today()->subDays($dayOffset);
+                $key = $date->toDateString();
+
+                return [
+                    'day' => $date->format('D'),
+                    'date' => $date->format('d M'),
+                    'lost' => (int) ($lostByDay[$key] ?? 0),
+                    'found' => (int) ($foundByDay[$key] ?? 0),
+                    'resolved' => (int) ($resolvedByDay[$key] ?? 0),
+                ];
+            })
+            ->values();
+
+        $maxActivityCount = (int) max(1, $activitySeries
+            ->flatMap(function (array $dayStats) {
+                return [$dayStats['lost'], $dayStats['found'], $dayStats['resolved']];
+            })
+            ->max());
+
         return view('admin.dashboard', compact(
             'totalLost',
             'totalFound',
@@ -58,7 +100,9 @@ class AdminDashboardController extends Controller
             'activeFound',
             'resolvedCount',
             'recentLostReports',
-            'recentFoundReports'
+            'recentFoundReports',
+            'activitySeries',
+            'maxActivityCount'
         ));
     }
 
@@ -295,6 +339,7 @@ class AdminDashboardController extends Controller
             /** @var FoundItemReport $foundReport */
             $foundReport = $candidate['report'];
             $score = $candidate['score'];
+            $isAdminManagedFoundItem = ! empty($foundReport->reviewed_by);
 
             $lostOwner->notify(new PotentialMatchFound(
                 'lost',
@@ -303,7 +348,8 @@ class AdminDashboardController extends Controller
                 'found',
                 $foundReport->id,
                 $foundReport->item_name,
-                $score
+                $score,
+                $isAdminManagedFoundItem
             ));
 
             if ($foundReport->user && $foundReport->user_id !== $lostOwner->id) {
@@ -331,6 +377,7 @@ class AdminDashboardController extends Controller
             /** @var LostItemReport $lostReport */
             $lostReport = $candidate['report'];
             $score = $candidate['score'];
+            $isAdminManagedFoundItem = ! empty($foundReport->reviewed_by);
 
             $foundOwner->notify(new PotentialMatchFound(
                 'found',
@@ -350,7 +397,8 @@ class AdminDashboardController extends Controller
                     'found',
                     $foundReport->id,
                     $foundReport->item_name,
-                    $score
+                    $score,
+                    $isAdminManagedFoundItem
                 ));
             }
         });

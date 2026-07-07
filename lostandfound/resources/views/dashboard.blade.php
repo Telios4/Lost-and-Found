@@ -4,6 +4,29 @@
 
 @section('content')
 
+    <style>
+        .su-dashboard-page {
+            width: 100%;
+            max-width: 44rem;
+            margin-inline: auto;
+            text-align: center;
+        }
+
+        .su-dashboard-page .su-action-grid {
+            grid-template-columns: 1fr;
+            justify-items: center;
+            gap: 0.85rem;
+        }
+
+        .su-dashboard-page .su-action-card {
+            width: 100%;
+            max-width: 34rem;
+            text-align: left;
+        }
+    </style>
+
+    <div class="su-dashboard-page">
+
     <section class="su-page-head">
         <h1 class="su-page-title">
             Welcome, {{ Auth::user()->name }}
@@ -40,6 +63,7 @@
         </a>
 
     </section>
-    
+
+    </div>
 
 @endsection

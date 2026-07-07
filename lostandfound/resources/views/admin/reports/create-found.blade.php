@@ -7,7 +7,7 @@
         <h1 class="su-page-title">Post Found Item</h1>
         <p class="su-page-subtitle">Create a found item listing from the admin module.</p>
 
-        <form method="POST" action="{{ route('admin.reports.found.store') }}" enctype="multipart/form-data" class="su-form-card">
+        <form method="POST" action="{{ route('admin.reports.found.store') }}" enctype="multipart/form-data" class="su-form-card su-form-card--report">
             @csrf
 
             <div class="su-form-group">
@@ -31,7 +31,7 @@
                 @enderror
             </div>
 
-            <div class="su-form-group">
+            <div class="su-form-group su-form-group--full">
                 <label for="description" class="su-form-label">Description <span class="su-required">*</span></label>
                 <textarea id="description" name="description" rows="4" class="su-form-input su-form-textarea @error('description') su-form-input--error @enderror">{{ old('description') }}</textarea>
                 @error('description')
@@ -55,7 +55,7 @@
                 @enderror
             </div>
 
-            <div class="su-form-group">
+            <div class="su-form-group su-form-group--full">
                 <label for="photo" class="su-form-label">Photo <span class="su-form-help">(optional)</span></label>
                 <input type="file" id="photo" name="photo" accept="image/*" class="su-form-input @error('photo') su-form-input--error @enderror" />
                 @error('photo')
@@ -63,7 +63,7 @@
                 @enderror
             </div>
 
-            <div class="su-form-actions">
+            <div class="su-form-actions su-form-group--full">
                 <a href="{{ route('admin.dashboard') }}" class="su-btn-outline">Cancel</a>
                 <button type="submit" class="su-btn-primary">Post Found Item</button>
             </div>

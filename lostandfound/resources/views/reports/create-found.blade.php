@@ -13,7 +13,7 @@
         <form method="POST"
               action="{{ route('reports.found.store') }}"
               enctype="multipart/form-data"
-              class="su-form-card">
+              class="su-form-card su-form-card--report">
             @csrf
 
             <!-- Item Name -->
@@ -53,7 +53,7 @@
             </div>
 
             <!-- Description -->
-            <div class="su-form-group">
+            <div class="su-form-group su-form-group--full">
                 <label for="description" class="su-form-label">
                     Description <span class="su-required">*</span>
                 </label>
@@ -100,7 +100,7 @@
             </div>
 
             <!-- Photo -->
-            <div class="su-form-group">
+            <div class="su-form-group su-form-group--full">
                 <label for="photo" class="su-form-label">
                     Photo <span class="su-form-help">(optional)</span>
                 </label>
@@ -116,7 +116,7 @@
             </div>
 
             <!-- Submit -->
-            <div class="su-form-actions">
+            <div class="su-form-actions su-form-group--full">
                 <a href="{{ route('dashboard') }}"
                    class="su-btn-outline">
                     Cancel
